@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGPU Female Face</title>
+    <style>
+        body { margin: 0; }
+        canvas { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script type="module">
+        // Initialize WebGPU
+        if (!navigator.gpu) {
+            throw new Error("WebGPU not supported");
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+        
+        const canvas = document.querySelector("canvas");
+        const context = canvas.getContext("webgpu");
+        
+        const format = navigator.gpu.getPreferredCanvasFormat();
+        context.configure({
+            device,
+            format,
+            alphaMode: "premultiplied",
+        });
+
+        // Vertex shader
+        const vertexShader = `
+            struct VertexInput {
+                @location(0) position: vec3f,
+                @location(1) normal: vec3f,
+            }
+
+            struct VertexOutput {
+                @builtin(position) position: vec4f,
+                @location(0) normal: vec3f,
+            }
+
+            @vertex
+            fn main(input: VertexInput) -> VertexOutput {
+                var output: VertexOutput;
+                output.position = vec4f(input.position, 1.0);
+                output.normal = input.normal;
+                return output;
+            }
+        `;
+
+        // Fragment shader
+        const fragmentShader = `
+            @fragment
+            fn main(@location(0) normal: vec3f) -> @location(0) vec4f {
+                let N = normalize(normal);
+                let L = normalize(vec3f(1.0, 1.0, 1.0));
+                let diffuse = max(dot(N, L), 0.0);
+                
+                // Skin tone
+                let baseColor = vec3f(0.98, 0.85, 0.76);
+                return vec4f(baseColor * diffuse, 1.0);
+            }
+        `;
+
+        // Vertex buffer layout
+        const vertexBufferLayout = {
+            arrayStride: 24,
+            attributes: [
+                {
+                    // position
+                    shaderLocation: 0,
+                    offset: 0,
+                    format: 'float32x3'
+                },
+                {
+                    // normal
+                    shaderLocation: 1,
+                    offset: 12,
+                    format: 'float32x3'
+                }
+            ]
+        };
+
+        // Create pipeline
+        const pipeline = device.createRenderPipeline({
+            layout: "auto",
+            vertex: {
+                module: device.createShaderModule({ code: vertexShader }),
+                entryPoint: "main",
+                buffers: [vertexBufferLayout]
+            },
+            fragment: {
+                module: device.createShaderModule({ code: fragmentShader }),
+                entryPoint: "main",
+                targets: [{ format }]
+            },
+            primitive: {
+                topology: "triangle-list",
+                cullMode: "back"
+            }
+        });
+
+        // Face geometry (simplified sphere for base shape)
+        const vertices = new Float32Array([
+            // Front face (2 triangles)
+            // Position (xyz), Normal (xyz)
+            -0.5, -0.5, 0.5,   0.0, 0.0, 1.0,
+             0.5, -0.5, 0.5,   0.0, 0.0, 1.0,
+             0.5,  0.5, 0.5,   0.0, 0.0, 1.0,
+            -0.5, -0.5, 0.5,   0.0, 0.0, 1.0,
+             0.5,  0.5, 0.5,   0.0, 0.0, 1.0,
+            -0.5,  0.5, 0.5,   0.0, 0.0, 1.0,
+        ]);
+
+        const vertexBuffer = device.createBuffer({
+            size: vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(vertexBuffer, 0, vertices);
+
+        // Render loop
+        function frame() {
+            const commandEncoder = device.createCommandEncoder();
+            const textureView = context.getCurrentTexture().createView();
+
+            const renderPassDescriptor = {
+                colorAttachments: [{
+                    view: textureView,
+                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                    loadOp: 'clear',
+                    storeOp: 'store',
+                }]
+            };
+
+            const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+            passEncoder.setPipeline(pipeline);
+            passEncoder.setVertexBuffer(0, vertexBuffer);
+            passEncoder.draw(6, 1, 0, 0); // 6 vertices
+            passEncoder.end();
+
+            device.queue.submit([commandEncoder.finish()]);
+            requestAnimationFrame(frame);
+        }
+
+        // Start rendering
+        frame();
+    </script>
+</body>
+</html>

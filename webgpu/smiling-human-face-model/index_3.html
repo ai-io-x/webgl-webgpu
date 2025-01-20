@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGPU Female Face</title>
+    <style>
+        body { margin: 0; background: #000; }
+        canvas { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script type="module">
+        import * as mat4 from 'https://cdn.skypack.dev/gl-matrix/mat4';
+        import * as vec3 from 'https://cdn.skypack.dev/gl-matrix/vec3';
+
+        // Initialize WebGPU
+        if (!navigator.gpu) {
+            throw new Error("WebGPU not supported");
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+        
+        const canvas = document.querySelector("canvas");
+        const context = canvas.getContext("webgpu");
+        
+        // Canvas setup
+        const format = navigator.gpu.getPreferredCanvasFormat();
+        const size = {
+            width: canvas.clientWidth,
+            height: canvas.clientHeight
+        };
+
+        context.configure({
+            device,
+            format,
+            alphaMode: "premultiplied",
+        });
+
+        // Create face geometry
+        function createFaceGeometry() {
+            // Base face sphere
+            const vertices = [];
+            const indices = [];
+            const radius = 1.0;
+            const segments = 32;
+            
+            // Generate sphere vertices
+            for (let lat = 0; lat <= segments; lat++) {
+                const theta = lat * Math.PI / segments;
+                const sinTheta = Math.sin(theta);
+                const cosTheta = Math.cos(theta);
+
+                for (let lon = 0; lon <= segments; lon++) {
+                    const phi = lon * 2 * Math.PI / segments;
+                    const sinPhi = Math.sin(phi);
+                    const cosPhi = Math.cos(phi);
+
+                    const x = cosPhi * sinTheta;
+                    const y = cosTheta;
+                    const z = sinPhi * sinTheta;
+
+                    // Position
+                    vertices.push(x * radius, y * radius, z * radius);
+                    // Normal
+                    vertices.push(x, y, z);
+                    // UV
+                    vertices.push(lon/segments, lat/segments);
+                }
+            }
+
+            // Generate indices
+            for (let lat = 0; lat < segments; lat++) {
+                for (let lon = 0; lon < segments; lon++) {
+                    const first = (lat * (segments + 1)) + lon;
+                    const second = first + segments + 1;
+
+                    indices.push(first, second, first + 1);
+                    indices.push(second, second + 1, first + 1);
+                }
+            }
+
+            return { vertices: new Float32Array(vertices), indices: new Uint16Array(indices) };
+        }
+
+        // Create face features
+        function createFaceFeatures() {
+            const features = [];
+            
+            // Left eye
+            features.push(...createEye(-0.3, 0.2, -0.7));
+            // Right eye
+            features.push(...createEye(0.3, 0.2, -0.7));
+            // Nose
+            features.push(...createNose(0, 0, -0.7));
+            // Lips
+            features.push(...createLips(0, -0.3, -0.7));
+
+            return new Float32Array(features);
+        }
+
+        function createEye(x, y, z) {
+            // Ellipsoid for eye
+            const eyeVertices = [];
+            const segments = 16;
+            const radiusX = 0.1;
+            const radiusY = 0.05;
+            const radiusZ = 0.05;
+
+            // Generate eye vertices
+            // ... eye geometry generation code ...
+
+            return eyeVertices;
+        }
+
+        // Create shader modules
+        const vertexShader = `
+            struct Uniforms {
+                modelViewProj: mat4x4f,
+                normal: mat4x4f,
+            }
+            @binding(0) @group(0) var<uniform> uniforms: Uniforms;
+
+            struct VertexOutput {
+                @builtin(position) position: vec4f,
+                @location(0) normal: vec3f,
+                @location(1) uv: vec2f,
+            }
+
+            @vertex
+            fn main(
+                @location(0) position: vec3f,
+                @location(1) normal: vec3f,
+                @location(2) uv: vec2f,
+            ) -> VertexOutput {
+                var output: VertexOutput;
+                output.position = uniforms.modelViewProj * vec4f(position, 1.0);
+                output.normal = (uniforms.normal * vec4f(normal, 0.0)).xyz;
+                output.uv = uv;
+                return output;
+            }
+        `;
+
+        const fragmentShader = `
+            @fragment
+            fn main(
+                @location(0) normal: vec3f,
+                @location(1) uv: vec2f,
+            ) -> @location(0) vec4f {
+                let N = normalize(normal);
+                let L = normalize(vec3f(1.0, 1.0, 1.0));
+                let diffuse = max(dot(N, L), 0.0);
+                
+                // Skin tone
+                let baseColor = vec3f(0.98, 0.85, 0.76);
+                let finalColor = baseColor * (0.2 + 0.8 * diffuse);
+                
+                return vec4f(finalColor, 1.0);
+            }
+        `;
+
+        // ... Continue with pipeline setup and render loop ...
+        
+    </script>
+</body>
+</html>
