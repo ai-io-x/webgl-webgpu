@@ -82,3 +82,5 @@ WebGPU is a JavaScript API provided by a web browser that enables webpage script
 [a model](https://within-unlimited.github.io/neon-lights/release/)
 
 [a mode website](http://robinmastromarino.com/project/fanny-myard)
+
+[Create 3D Objects with Three.js](https://codehs.com/tutorial/mattarnold/create-3d-objects-with-threejs)
