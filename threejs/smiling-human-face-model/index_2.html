@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enhanced 3D Smiling Face</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Enhanced scene setup with better lighting and materials
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x443333);
+        scene.fog = new THREE.Fog(0x443333, 1, 12);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Enhanced materials with better shading
+        const faceMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffdbac,
+            specular: 0x050505,
+            shininess: 100,
+            reflectivity: 0.3
+        });
+
+        // Face with more detailed geometry
+        const faceGeometry = new THREE.SphereGeometry(2, 64, 64);
+        const face = new THREE.Mesh(faceGeometry, faceMaterial);
+        face.castShadow = true;
+        face.receiveShadow = true;
+        scene.add(face);
+
+        // Enhanced eyes with glossy effect
+        const eyeMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            specular: 0xffffff,
+            shininess: 100
+        });
+        const eyeGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.7, 0.3, 1.6);
+        leftEye.castShadow = true;
+        face.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.7, 0.3, 1.6);
+        rightEye.castShadow = true;
+        face.add(rightEye);
+
+        // Enhanced smile with better geometry
+        const smileGeometry = new THREE.TorusGeometry(0.7, 0.15, 32, 64, Math.PI);
+        const smileMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            specular: 0x111111,
+            shininess: 30
+        });
+        const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+        smile.position.set(0, -0.3, 1.6);
+        smile.rotation.x = -0.5;
+        smile.castShadow = true;
+        face.add(smile);
+
+        // Enhanced lighting setup
+        const ambientLight = new THREE.AmbientLight(0x443333, 0.5);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffddcc, 1);
+        dirLight1.position.set(1, 0.75, 0.5);
+        dirLight1.castShadow = true;
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xccccff, 1);
+        dirLight2.position.set(-1, 0.75, -0.5);
+        dirLight2.castShadow = true;
+        scene.add(dirLight2);
+
+        // Add point lights for eyes sparkle
+        const leftEyeLight = new THREE.PointLight(0xffffff, 0.5, 3);
+        leftEyeLight.position.set(-0.7, 0.3, 2);
+        face.add(leftEyeLight);
+
+        const rightEyeLight = new THREE.PointLight(0xffffff, 0.5, 3);
+        rightEyeLight.position.set(0.7, 0.3, 2);
+        face.add(rightEyeLight);
+
+        camera.position.z = 5;
+
+        // Enhanced animation with smooth movement
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            face.rotation.y = Math.sin(time) * 0.3;
+            face.rotation.x = Math.sin(time * 0.5) * 0.1;
+            
+            renderer.render(scene, camera);
+        }
+
+        // Improved window resize handler
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize, false);
+
+        animate();
+    </script>
+</body>
+</html>

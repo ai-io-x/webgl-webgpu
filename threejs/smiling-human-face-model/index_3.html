@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Smiling Face</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x443333);
+        scene.fog = new THREE.Fog(0x443333, 1, 12);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Face base
+        const faceMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffdbac,
+            specular: 0x050505,
+            shininess: 100
+        });
+
+        const faceGeometry = new THREE.SphereGeometry(2, 64, 64);
+        const face = new THREE.Mesh(faceGeometry, faceMaterial);
+        face.castShadow = true;
+        face.receiveShadow = true;
+        scene.add(face);
+
+        // Eyes
+        const eyeMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            specular: 0xffffff,
+            shininess: 100
+        });
+        const eyeGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.7, 0.3, 1.6);
+        face.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.7, 0.3, 1.6);
+        face.add(rightEye);
+
+        // Nose
+        const noseGeometry = new THREE.ConeGeometry(0.2, 0.5, 32);
+        const noseMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffcca8,
+            specular: 0x050505,
+            shininess: 30
+        });
+        const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+        nose.rotation.x = Math.PI / 2;
+        nose.position.set(0, 0, 1.8);
+        face.add(nose);
+
+        // Lips
+        const lipMaterial = new THREE.MeshPhongMaterial({
+            color: 0xff9999,
+            specular: 0x111111,
+            shininess: 30
+        });
+
+        const upperLipGeometry = new THREE.TorusGeometry(0.7, 0.08, 16, 32, Math.PI);
+        const upperLip = new THREE.Mesh(upperLipGeometry, lipMaterial);
+        upperLip.position.set(0, -0.3, 1.6);
+        upperLip.rotation.x = -0.2;
+        face.add(upperLip);
+
+        const lowerLipGeometry = new THREE.TorusGeometry(0.6, 0.1, 16, 32, Math.PI);
+        const lowerLip = new THREE.Mesh(lowerLipGeometry, lipMaterial);
+        lowerLip.position.set(0, -0.5, 1.5);
+        lowerLip.rotation.x = -0.8;
+        face.add(lowerLip);
+
+        // Smile lines
+        const smileLineGeometry = new THREE.TorusGeometry(0.2, 0.05, 16, 32, Math.PI / 2);
+        const smileLineMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffcca8,
+            transparent: true,
+            opacity: 0.5
+        });
+        
+        const leftSmileLine = new THREE.Mesh(smileLineGeometry, smileLineMaterial);
+        leftSmileLine.position.set(-1, -0.3, 1.4);
+        leftSmileLine.rotation.z = Math.PI / 4;
+        face.add(leftSmileLine);
+
+        const rightSmileLine = new THREE.Mesh(smileLineGeometry, smileLineMaterial);
+        rightSmileLine.position.set(1, -0.3, 1.4);
+        rightSmileLine.rotation.z = -Math.PI / 4;
+        face.add(rightSmileLine);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x443333, 0.5);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffddcc, 1);
+        dirLight1.position.set(1, 0.75, 0.5);
+        dirLight1.castShadow = true;
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xccccff, 1);
+        dirLight2.position.set(-1, 0.75, -0.5);
+        dirLight2.castShadow = true;
+        scene.add(dirLight2);
+
+        // Eye highlights
+        const leftEyeLight = new THREE.PointLight(0xffffff, 0.5, 3);
+        leftEyeLight.position.set(-0.7, 0.3, 2);
+        face.add(leftEyeLight);
+
+        const rightEyeLight = new THREE.PointLight(0xffffff, 0.5, 3);
+        rightEyeLight.position.set(0.7, 0.3, 2);
+        face.add(rightEyeLight);
+
+        camera.position.z = 5;
+
+        // Animation
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+            face.rotation.y = Math.sin(time) * 0.3;
+            face.rotation.x = Math.sin(time * 0.5) * 0.1;
+            renderer.render(scene, camera);
+        }
+
+        // Window resize handler
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize, false);
+
+        animate();
+    </script>
+</body>
+</html>
